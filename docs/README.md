@@ -8,7 +8,7 @@ This is a backwards-compatible fork of the popular dnstwist program, with a few 
  - the ability to toggle IDNA(punycode)
 
 --ens
-ENS names are open to similar glyph-related problems that DNS names are. This option will lookup the address and owner for each name. Requires 'WEB3_PROVIDER_URI' environment variable. This option also uses a different set of glyphs (based on https://www.irongeek.com/homoglyph-attack-generator.php) than the regular dnstwist usage, which - per the dnstwist README - targets ranges "of Unicode characters to ensure that generated domains can be registered in practice." The Ethereum Name System, however, has far fewer (if any) restrictions on mixing character sets when registering a name. 
+ENS names are open to similar glyph-related problems that DNS names are. This option will lookup the address and owner for each name. Requires 'WEB3_PROVIDER_URI' environment variable. This option also uses a different set of glyphs (based on https://www.irongeek.com/homoglyph-attack-generator.php) than the regular dnstwist usage, which - per the dnstwist README - targets ranges "of Unicode characters to ensure that generated domains can be registered in practice." The Ethereum Name Service, however, has far fewer (if any) restrictions on mixing character sets when registering a name. 
 
 --extended-glyphs
 You are able to use a combined set of the regular glyphs and the --ens glyphs with this argument.
