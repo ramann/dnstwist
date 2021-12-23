@@ -25,7 +25,7 @@ limitations under the License.
 '''
 
 __author__ = 'Marcin Ulikowski'
-__version__ = '20211204'
+__version__ = '20211222-dev'
 __email__ = 'marcin@ulikowski.pl'
 
 import re
@@ -107,6 +107,12 @@ except ImportError:
 		def encode(domain):
 			return domain.encode('idna')
 
+try:
+	import web3
+	from ens import ENS
+	MODULE_ENS = True
+except ImportError:
+	MODULE_ENS = False
 
 VALID_FQDN_REGEX = re.compile(r'(?=^.{4,253}$)(^((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z0-9-]{2,63}$)', re.IGNORECASE)
 
@@ -280,6 +286,45 @@ class Fuzzer():
 			'y': ['ʏ', 'ý', 'ÿ', 'ŷ', 'ƴ', 'ȳ', 'ɏ', 'ỿ', 'ẏ', 'ỵ'],
 			'z': ['ʐ', 'ż', 'ź', 'ᴢ', 'ƶ', 'ẓ', 'ẕ', 'ⱬ']
 			}
+		self.glyphs_ens = {
+			'0':['O', 'o', 'Ο', 'ο', 'О', 'о', 'Օ', 'Ｏ', 'ｏ'],
+			'1':['I', 'ا', '１'],
+			'2':['２'],
+			'3':['３'],
+			'4':['４'],
+			'5':['５'],
+			'6':['６'],
+			'7':['７'],
+			'8':['Ց', '８'],
+			'9':['９'],
+			'a':['À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'à', 'á', 'â', 'ã', 'ä', 'å', 'ɑ', 'Α', 'α', 'а', 'Ꭺ', 'Ａ', 'ａ'],
+			'b':['ß', 'ʙ', 'Β', 'β', 'В', 'Ь', 'Ᏼ', 'ᛒ', 'Ｂ', 'ｂ'],
+			'c':['ϲ', 'Ϲ', 'С', 'с', 'Ꮯ', 'Ⅽ', 'ⅽ', 'Ｃ', 'ｃ'],
+			'd':['Ď', 'ď', 'Đ', 'đ', 'ԁ', 'ժ', 'Ꭰ', 'ḍ', 'Ⅾ', 'ⅾ', 'Ｄ', 'ｄ'],
+			'e':['È', 'É', 'Ê', 'Ë', 'é', 'ê', 'ë', 'Ē', 'ē', 'Ĕ', 'ĕ', 'Ė', 'ė', 'Ę', 'Ě', 'ě', 'Ε', 'Е', 'е', 'Ꭼ', 'Ｅ', 'ｅ'],
+			'f':['Ϝ', 'Ｆ' 'ｆ'],
+			'g':['ɡ', 'ɢ', 'Ԍ', 'ն', 'Ꮐ', 'Ｇ', 'ｇ'],
+			'h':['ʜ', 'Η', 'Н', 'һ', 'Ꮋ', 'Ｈ', 'ｈ'],
+			'i':['l', 'ɩ', 'Ι', 'І', 'і', 'ا', 'Ꭵ', 'ᛁ', 'Ⅰ', 'ⅰ', 'Ｉ', 'ｉ'],
+			'j':['ϳ', 'Ј', 'ј', 'յ', 'Ꭻ', 'Ｊ', 'ｊ'],
+			'k':['Κ', 'κ', 'К', 'Ꮶ', 'ᛕ', 'K', 'Ｋ', 'ｋ'],
+			'l':['ʟ', 'ι', 'ا', 'Ꮮ', 'Ⅼ', 'ⅼ', 'Ｌ', 'ｌ'],
+			'm':['Μ', 'Ϻ', 'М', 'Ꮇ', 'ᛖ', 'Ⅿ', 'ⅿ', 'Ｍ', 'ｍ'],
+			'n':['ɴ', 'Ν', 'Ｎ', 'ｎ'],
+			'o':['o', 'Ο', 'ο', 'О', 'о', 'Օ', 'Ｏ', 'ｏ'],
+			'p':['Ρ', 'ρ', 'Р', 'р', 'Ꮲ', 'Ｐ', 'ｐ'],
+			'q':['Ⴍ', 'Ⴓ', 'Ｑ', 'ｑ'],
+			'r':['ʀ', 'Ի', 'Ꮢ', 'ᚱ', 'Ｒ', 'ｒ'],
+			's':['Ѕ', 'ѕ', 'Տ', 'Ⴝ', 'Ꮪ', 'Ｓ', 'ｓ'],
+			't':['Τ', 'τ', 'Т', 'Ꭲ', 'Ｔ', 'ｔ'],
+			'u':['μ', 'υ', 'Ա', 'Ս', '⋃', 'Ｕ', 'ｕ'],
+			'v':['ν', 'Ѵ', 'ѵ', 'Ꮩ', 'Ⅴ', 'ⅴ', 'Ｖ', 'ｖ'],
+			'w':['ѡ','Ꮃ', 'Ｗ', 'ｗ'],
+			'x':['Χ', 'χ', 'Х', 'х', 'Ⅹ', 'ⅹ', 'Ｘ', 'ｘ'],
+			'y':['ʏ', 'Υ', 'γ', 'у', 'Ү', 'Ｙ', 'ｙ'],
+			'z':['Ζ', 'Ꮓ', 'Ｚ', 'ｚ'],
+			}
+		self.glyphs_extended = {key: value + (self.glyphs[key] if key in self.glyphs else []) for key, value in self.glyphs_ens.items()}
 
 	def _bitsquatting(self):
 		masks = [1, 2, 4, 8, 16, 32, 64, 128]
@@ -290,9 +335,14 @@ class Fuzzer():
 				if b in chars:
 					yield self.domain[:i] + b + self.domain[i+1:]
 
-	def _homoglyph(self):
-		def mix(domain):
-			glyphs = self.glyphs
+	def _homoglyph(self,glyphs='original'):
+		def mix(domain,glyphs):
+			if glyphs == 'extended':
+				glyphs = self.glyphs_extended
+			elif glyphs == 'ens':
+				glyphs = self.glyphs_ens
+			else:
+				glyphs = self.glyphs
 			for w in range(1, len(domain)):
 				for i in range(len(domain)-w+1):
 					pre = domain[:i]
@@ -301,10 +351,10 @@ class Fuzzer():
 					for c in win:
 						for g in glyphs.get(c, []):
 							yield pre + win.replace(c, g) + suf
-		result1 = set(mix(self.domain))
+		result1 = set(mix(self.domain,glyphs))
 		result2 = set()
 		for r in result1:
-			result2.update(set(mix(r)))
+			result2.update(set(mix(r,glyphs)))
 		return result1 | result2
 
 	def _hyphenation(self):
@@ -370,16 +420,18 @@ class Fuzzer():
 			self.tld_dictionary.remove(self.tld)
 		return set(self.tld_dictionary)
 
-	def generate(self):
+	def generate(self,glyphs='original'):
 		self.domains.add(Permutation(fuzzer='*original', domain='.'.join(filter(None, [self.subdomain, self.domain, self.tld]))))
 		for f_name in [
-			'addition', 'bitsquatting', 'homoglyph', 'hyphenation',
+			'addition', 'bitsquatting', 'hyphenation',
 			'insertion', 'omission', 'repetition', 'replacement',
 			'subdomain', 'transposition', 'vowel-swap', 'dictionary',
 		]:
 			f = getattr(self, f'_{f_name}'.replace('-', '_'))
 			for domain in f():
 				self.domains.add(Permutation(fuzzer=f_name, domain='.'.join(filter(None, [self.subdomain, domain, self.tld]))))
+		for domain in self._homoglyph(glyphs):
+		    self.domains.add(Permutation(fuzzer='homoglyph', domain='.'.join(filter(None, [self.subdomain, domain, self.tld]))))
 		for tld in self._tld():
 			self.domains.add(Permutation(fuzzer='tld-swap', domain='.'.join(filter(None, [self.subdomain, self.domain, tld]))))
 		if '.' in self.tld:
@@ -426,6 +478,8 @@ class Scanner(threading.Thread):
 		self.option_ssdeep = False
 		self.option_banners = False
 		self.option_mxcheck = False
+		self.ens = False
+		self.option_reverse_lookup = False
 		self.nameservers = []
 		self.useragent = ''
 
@@ -513,6 +567,28 @@ class Scanner(threading.Thread):
 
 			domain = task.get('domain')
 
+			if self.ens:
+				w3 = web3.Web3()
+				ns = ENS.fromWeb3(w3)
+				try:
+					ens_address = ns.address(idna.decode(domain))
+					ens_owner = ns.owner(idna.decode(domain))
+					if self.option_reverse_lookup and ens_address is not None:
+						ens_reverse_lookup = ns.name(ens_address)
+				except web3.exceptions.CannotHandleRequest as e:
+					print("Did you set the WEB3_PROVIDER_URI environment variable?", file=sys.stderr, flush=True)
+					print(e, file=sys.stderr, flush=True)
+				except Exception as e:
+					self._debug(e)
+					pass
+				if ens_address is not None:
+					task['ens_address'] = ens_address
+				if ens_owner is not None and ens_owner != web3.constants.ADDRESS_ZERO:
+					task['ens_owner'] = ens_owner
+				if ens_address is not None and ens_reverse_lookup is not None: #self.option_reverse_lookup and ens_address is not None:
+					task['reverse_lookup'] = idna.encode(ens_reverse_lookup).decode()
+				continue
+
 			dns_a = False
 			dns_aaaa = False
 			if self.option_extdns:
@@ -534,6 +610,8 @@ class Scanner(threading.Thread):
 					try:
 						task['dns_a'] = self._answer_to_list(resolve(domain, rdtype=dns.rdatatype.A))
 						dns_a = True
+						if self.option_reverse_lookup:
+							task['reverse_lookup'] = self._answer_to_list(resolv.resolve_address(task['dns_a'][0]))
 					except NoNameservers:
 						task['dns_a'] = ['!ServFail']
 					except DNSException as e:
@@ -542,6 +620,8 @@ class Scanner(threading.Thread):
 					try:
 						task['dns_aaaa'] = self._answer_to_list(resolve(domain, rdtype=dns.rdatatype.AAAA))
 						dns_aaaa = True
+						if self.option_reverse_lookup and 'reverse_lookup' not in task:
+							task['reverse_lookup'] = self._answer_to_list(resolv.resolve_address(task['dns_aaaa'][0]))
 					except NoNameservers:
 						task['dns_aaaa'] = ['!ServFail']
 					except DNSException as e:
@@ -619,38 +699,68 @@ class Scanner(threading.Thread):
 			self.jobs.task_done()
 
 
-def create_json(domains=[]):
-	return json.dumps(domains, indent=4, sort_keys=True)
+def create_json(domains=[], toggle_idna=False):
+	if toggle_idna:
+		for x in domains:
+			x.update({'domain': idna.decode(x.get('domain'))})
+			if 'reverse_lookup' in x:
+#				print(x['domain'])
+#				print(x['reverse_lookup'])
+#				reverse_lookup = [idna.decode(r) for r in idna.decode(x.get('reverse_lookup'))]
+				if type(x['reverse_lookup']) is list:
+					reverse_lookup = [idna.decode(r) for r in x.get('reverse_lookup')]
+					x.update({'reverse_lookup':reverse_lookup})
+				else:
+					x.update({'reverse_lookup': idna.decode(x.get('reverse_lookup'))})
+	return json.dumps(domains, indent=4, sort_keys=True, ensure_ascii=not toggle_idna)
 
 
-def create_csv(domains=[]):
-	csv = ['fuzzer,domain,dns_a,dns_aaaa,dns_mx,dns_ns,geoip,whois_registrar,whois_created,ssdeep']
+def create_csv(domains=[], toggle_idna=False):
+	csv = ['fuzzer,domain,dns_a,dns_aaaa,dns_mx,dns_ns,geoip,whois_registrar,whois_created,ssdeep,ens_address,ens_owner,reverse_lookup']
 	for domain in domains:
-		csv.append(','.join([domain.get('fuzzer'), domain.get('domain'),
+		reverse_lookup=''
+		if type(domain.get('reverse_lookup')) is list:
+			if toggle_idna:
+				reverse_lookup = ';'.join(idna.decode(x) for x in domain.get('reverse_lookup')) if 'reverse_lookup' in domain else [] #';'.join(idna.decode(domain.get('reverse_lookup', [])))
+			else:
+				reverse_lookup = ';'.join(domain.get('reverse_lookup', []))
+		else:
+			if toggle_idna:
+				reverse_lookup = idna.decode(domain.get('reverse_lookup')) if 'reverse_lookup' in domain else '' #str(idna.decode(domain.get('reverse_lookup', '')))
+			else:
+				reverse_lookup = str(domain.get('reverse_lookup', ''))
+		csv.append(','.join([domain.get('fuzzer'), idna.decode(domain.get('domain')) if toggle_idna else domain.get('domain'),
 			';'.join(domain.get('dns_a', [])),
 			';'.join(domain.get('dns_aaaa', [])),
 			';'.join(domain.get('dns_mx', [])),
 			';'.join(domain.get('dns_ns', [])),
 			domain.get('geoip', ''), domain.get('whois_registrar', ''), domain.get('whois_created', ''),
-			str(domain.get('ssdeep', ''))]))
+			str(domain.get('ssdeep', '')),
+			str(domain.get('ens_address', '')),
+			str(domain.get('ens_owner', '')),
+			reverse_lookup]))
 	return '\n'.join(csv)
 
 
-def create_list(domains=[]):
-	return '\n'.join([x.get('domain') for x in sorted(domains)])
+def create_list(domains=[], toggle_idna=False):
+	return '\n'.join([idna.decode(x.get('domain')) if toggle_idna else x.get('domain') for x in sorted(domains)])
 
 
-def create_cli(domains=[]):
+def create_cli(domains=[], toggle_idna=False):
 	cli = []
 	domains = list(domains)
 	if sys.stdout.encoding.lower() == 'utf-8':
 		for domain in domains:
 			name = domain['domain']
-			domain['domain'] = idna.decode(name)
+			domain['domain'] = idna.decode(name) if not toggle_idna else name
 	width_fuzzer = max([len(x['fuzzer']) for x in domains]) + 1
 	width_domain = max([len(x['domain']) for x in domains]) + 1
 	for domain in domains:
 		info = []
+		if 'ens_address' in domain:
+			info.append(str(domain['ens_address']))
+		if 'ens_owner' in domain:
+			info.append(FG_YEL + 'ENS-OWNER:' + FG_CYA + str(domain['ens_owner']) + FG_RST)
 		if 'dns_a' in domain:
 			if 'geoip' in domain:
 				info.append(';'.join(domain['dns_a']) + FG_CYA + '/' + domain['geoip'].replace(' ', '') + FG_RST)
@@ -665,6 +775,11 @@ def create_cli(domains=[]):
 				info.append(FG_YEL + 'SPYING-MX:' + FG_CYA + ';'.join(domain['dns_mx']) + FG_RST)
 			else:
 				info.append(FG_YEL + 'MX:' + FG_CYA + ';'.join(domain['dns_mx']) + FG_RST)
+		if 'reverse_lookup' in domain:
+			if 'ens_address' in domain:
+				info.append(FG_YEL + 'REVERSE-LOOKUP:' + FG_CYA + str(idna.decode(domain['reverse_lookup']) if not toggle_idna else domain['reverse_lookup']) + FG_RST)
+			else:
+				info.append(FG_YEL + 'REVERSE-LOOKUP:' + FG_CYA + ';'.join(idna.decode(x) if not toggle_idna else x for x in domain['reverse_lookup']) + FG_RST)
 		if 'banner_http' in domain:
 			info.append(FG_YEL + 'HTTP:' + FG_CYA + domain['banner_http'] + FG_RST)
 		if 'banner_smtp' in domain:
@@ -696,6 +811,7 @@ def main():
 	parser.add_argument('-a', '--all', action='store_true', help='Show all DNS records')
 	parser.add_argument('-b', '--banners', action='store_true', help='Determine HTTP and SMTP service banners')
 	parser.add_argument('-d', '--dictionary', type=str, metavar='FILE', help='Generate more domains using dictionary FILE')
+	parser.add_argument('-e', '--ens', action='store_true', help='Treat domain as an ENS (Ethereum Name Service) name')
 	parser.add_argument('-f', '--format', type=str, choices=['cli', 'csv', 'json', 'list'], default='cli', help='Output format (default: cli)')
 	parser.add_argument('-g', '--geoip', action='store_true', help='Lookup for GeoIP location')
 	parser.add_argument('-m', '--mxcheck', action='store_true', help='Check if MX can be used to intercept emails')
@@ -710,6 +826,9 @@ def main():
 	parser.add_argument('--nameservers', type=str, metavar='LIST', help='DNS or DoH servers to query (separated with commas)')
 	parser.add_argument('--useragent', type=str, metavar='STRING', default='Mozilla/5.0 dnstwist/%s' % __version__,
 		help='User-Agent STRING to send with HTTP requests (default: Mozilla/5.0 dnstwist/%s)' % __version__)
+	parser.add_argument('--extended-glyphs', action='store_true', help='Use extended set of glyphs')
+	parser.add_argument('--toggle-idna', action='store_true', help='Toggle the default IDNA encoding behavior')
+	parser.add_argument('--reverse-lookup', action='store_true', help='Perform a reverse lookup')
 	parser.add_argument('--debug', action='store_true', help='Display debug messages')
 
 	def _exit(code):
@@ -805,23 +924,42 @@ def main():
 		if not MODULE_GEOIP:
 			parser.error('missing GeoIP library or database')
 
+	if args.ens:
+		if not MODULE_ENS:
+			parser.error('missing web3 libary')
+
 	try:
 		url = UrlParser(args.domain) if args.domain.isascii() else UrlParser(idna.encode(args.domain).decode())
 	except Exception:
 		parser.error('invalid domain name: ' + args.domain)
 
+	glyphs = "standard" if not args.ens else "ens"
+	if (args.extended_glyphs):
+		glyphs = "extended"
+
 	fuzz = Fuzzer(url.domain, dictionary=dictionary, tld_dictionary=tld)
-	fuzz.generate()
+	fuzz.generate(glyphs)
 	domains = fuzz.domains
 
 	if args.format == 'list':
-		print(create_list(domains))
+		print(create_list(domains, args.toggle_idna))
 		_exit(0)
 
 	if not MODULE_DNSPYTHON:
 		p_err('WARNING: DNS features are limited due to lack of DNSPython library')
 
-	p_cli(FG_RND + ST_BRI +
+	if args.ens:
+		p_cli(FG_RND + ST_BRI +
+r'''                 _            _     _
+  ___  _ __  ___| |___      _(_)___| |_
+ / _ \| '_ \/ __| __\ \ /\ / / / __| __|
+| /__/| | | \__ \ |_ \ V  V /| \__ \ |_
+ \___||_| |_|___/\__| \_/\_/ |_|___/\__| {%s}
+
+''' % __version__ + FG_RST + ST_RST)
+
+	else:
+		p_cli(FG_RND + ST_BRI +
 r'''     _           _            _     _
   __| |_ __  ___| |___      _(_)___| |_
  / _` | '_ \/ __| __\ \ /\ / / / __| __|
@@ -887,6 +1025,10 @@ r'''     _           _            _     _
 			worker.option_mxcheck = True
 		if args.nameservers:
 			worker.nameservers = nameservers
+		if args.ens:
+			worker.ens = True
+		if args.reverse_lookup:
+			worker.option_reverse_lookup = True
 		worker.useragent = args.useragent
 
 		worker.debug = args.debug
@@ -938,11 +1080,11 @@ r'''     _           _            _     _
 
 	if domains:
 		if args.format == 'csv':
-			print(create_csv(domains))
+			print(create_csv(domains, args.toggle_idna))
 		elif args.format == 'json':
-			print(create_json(domains))
+			print(create_json(domains, args.toggle_idna))
 		else:
-			print(create_cli(domains))
+			print(create_cli(domains, args.toggle_idna))
 
 	_exit(0)
 
