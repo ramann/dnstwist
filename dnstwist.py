@@ -573,6 +573,7 @@ class Scanner(threading.Thread):
 				try:
 					ens_address = ns.address(idna.decode(domain))
 					ens_owner = ns.owner(idna.decode(domain))
+					ens_reverse_lookup = None
 					if self.option_reverse_lookup and ens_address is not None:
 						ens_reverse_lookup = ns.name(ens_address)
 				except web3.exceptions.CannotHandleRequest as e:
@@ -585,7 +586,7 @@ class Scanner(threading.Thread):
 					task['ens_address'] = ens_address
 				if ens_owner is not None and ens_owner != web3.constants.ADDRESS_ZERO:
 					task['ens_owner'] = ens_owner
-				if ens_address is not None and ens_reverse_lookup is not None: #self.option_reverse_lookup and ens_address is not None:
+				if ens_reverse_lookup is not None: 
 					task['reverse_lookup'] = idna.encode(ens_reverse_lookup).decode()
 				continue
 
@@ -704,9 +705,6 @@ def create_json(domains=[], toggle_idna=False):
 		for x in domains:
 			x.update({'domain': idna.decode(x.get('domain'))})
 			if 'reverse_lookup' in x:
-#				print(x['domain'])
-#				print(x['reverse_lookup'])
-#				reverse_lookup = [idna.decode(r) for r in idna.decode(x.get('reverse_lookup'))]
 				if type(x['reverse_lookup']) is list:
 					reverse_lookup = [idna.decode(r) for r in x.get('reverse_lookup')]
 					x.update({'reverse_lookup':reverse_lookup})
@@ -721,12 +719,12 @@ def create_csv(domains=[], toggle_idna=False):
 		reverse_lookup=''
 		if type(domain.get('reverse_lookup')) is list:
 			if toggle_idna:
-				reverse_lookup = ';'.join(idna.decode(x) for x in domain.get('reverse_lookup')) if 'reverse_lookup' in domain else [] #';'.join(idna.decode(domain.get('reverse_lookup', [])))
+				reverse_lookup = ';'.join(idna.decode(x) for x in domain.get('reverse_lookup')) if 'reverse_lookup' in domain else []
 			else:
 				reverse_lookup = ';'.join(domain.get('reverse_lookup', []))
 		else:
 			if toggle_idna:
-				reverse_lookup = idna.decode(domain.get('reverse_lookup')) if 'reverse_lookup' in domain else '' #str(idna.decode(domain.get('reverse_lookup', '')))
+				reverse_lookup = idna.decode(domain.get('reverse_lookup')) if 'reverse_lookup' in domain else ''
 			else:
 				reverse_lookup = str(domain.get('reverse_lookup', ''))
 		csv.append(','.join([domain.get('fuzzer'), idna.decode(domain.get('domain')) if toggle_idna else domain.get('domain'),
